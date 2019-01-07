@@ -31,7 +31,8 @@
             <input autofocus="autofocus" autocomplete="off"  v-model="newTodo" @keyup.enter='addTodo' placeholder="What needs to be done?" class="new-todo">
         </header>
         <section class="main">
-            <input type="checkbox" class="toggle-all">
+            <!-- 全选 -->
+            <input type="checkbox" class="toggle-all" v-model="isCheckAll">
             <ul class="todo-list">
                 <!-- 未完成 -->
                 <li class="todo" :class='{completed: item.isCompleted, editing: editTodo == item}' v-for="(item, index) in filterTodo" @dblclick='editTodo = item'>
@@ -42,7 +43,7 @@
                         <button class="destroy" @click='delTodo(index)'></button>
                     </div>
                     <!-- 编辑框 -->
-                    <input type="text" class="edit" v-model="item.info" @blur='editTodo=undefined'>
+                    <input type="text" class="edit" v-focus v-model="item.info" @blur='editTodo=undefined'>
                 </li>
                 
             </ul>
@@ -62,7 +63,7 @@
     <footer class="info">
         <p>双击编辑事项</p>
         <p>原作者 <a href="http://evanyou.me">尤雨溪</a></p>
-        <p>现作者 小谢谢</p>
+        <p>现作者 为为二号</p>
     </footer>
 
 
@@ -79,9 +80,22 @@
         4、点击完成（复选框为选中状态），将复选框和数组每个元素isCompleted进行绑定，isCompleted为 true给li添加一个completed类名
         5、计算未完成事项条数，计算属性，过滤出isCompleted为false的元素
         6、双击进入编辑
-        7、失去焦点，退出编辑
-        8、点击分类 筛选事项
+        7、双击事项显示编辑框同时获取焦点，利用自定义指令v-focus
+        8、失去焦点，退出编辑
+        9、点击All/Active/Completed分类 筛选出所有事项/未完成事项/已完成事项
+        10、清除已完成事项 Clear completed
+        11、全选与反选，利用计算属性
+
     */
+
+    // 注册一个全局自定义指令 获取焦点
+    Vue.directive('focus', {
+      // 当被绑定的元素更新时……
+      update: function (el) {
+        // 聚焦元素
+        el.focus()
+      }
+    })
 
     let app = new Vue({
         //选择器
@@ -123,7 +137,7 @@
                 //遍历数组
                 let temArr = [];
                 this.todoList.forEach( (ele,index) => {
-                    //如果是已完成的，就删除
+                    //如果是未完成的，用临时数组保存
                     if(ele.isCompleted == false){
                         // this.todoList.splice(index,1);
                         temArr.push(ele);
@@ -181,6 +195,22 @@
                     return newArr;
                 }
             },
+            //全选与反选
+            isCheckAll: {
+                get(){
+                    let isCheckAll = this.todoList.filter( ele => {
+                        if(ele.isCompleted == true)
+                        return true;
+                    }).length == this.todoList.length;
+                    return isCheckAll;
+                },
+                set(value){
+                    for(let i=0; i<this.todoList.length; i++){
+                        this.todoList[i].isCompleted = value;
+                    }
+                }
+            },
+            
             //已完成的事项个数
             completedNum(){            
                 let num = 0;
